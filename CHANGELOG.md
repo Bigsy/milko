@@ -20,7 +20,9 @@ First independent MilkO Markdown editor for desktop Orca 1.4.251 or newer.
   CodeMirror views in both directions without waiting for a document edit.
 - Collect dependency notices per installed version, retaining distinct copyright
   notices and rejecting missing notices in any version.
-- Local assets, compressed Harper WASM, dependency notices and reproducible packaging.
+- Local assets, optimized uncompressed Harper WASM, dependency notices and reproducible packaging.
+- Checksum-pinned Binaryen build tooling, full Harper parity checks, WOFF2-only math
+  fonts and payload checks rejecting embedded archives and native executables.
 
 This is an alpha candidate, not a published release. Relative/remote images,
 uploads, project-file navigation and reliable per-file caret restoration remain

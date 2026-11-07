@@ -23,8 +23,12 @@
   preview callbacks have no stable block identity, and node views own cancellation.
 - Themes use locally bundled Crepe palettes. Mermaid updates must preserve source,
   selection and undo, and ignore obsolete asynchronous renders.
-- Harper is optional and lazy. Keep workers, fonts, scripts and compressed WASM
+- Harper is optional and lazy. Keep workers, fonts, scripts and optimized WASM
   local, surface failures and dispose workers when disabled or destroyed.
+- The build uses checksum-pinned native Binaryen 133, cached under .orca/tools/.
+  Ship the complete optimized WASM below 16 MiB, without an embedded archive.
+  Preserve its imports/exports and test the actual asset in fresh processes;
+  Harper's glue caches its first loaded binary. Keep build tools out of Git.
 - Keep source and licence attribution for adapted modules. Collect notices for
   every installed package version, deduplicating only identical text. Reviewed
   upstream fallbacks are pinned by version and digest in licenses/overrides.json.

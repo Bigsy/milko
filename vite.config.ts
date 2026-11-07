@@ -2,11 +2,23 @@ import { defineConfig } from "vite";
 import { publishBuild } from "./scripts/publish-build.mjs";
 import { prepareHarper } from "./scripts/prepare-harper.mjs";
 
-prepareHarper();
+await prepareHarper();
 
 export default defineConfig({
   root: "src",
   base: "./",
+  css: {
+    postcss: {
+      plugins: [{
+        postcssPlugin: "katex-woff2-only",
+        Declaration(declaration: { prop: string; value: string }) {
+          if (declaration.prop !== "src" || !declaration.value.includes("KaTeX_") || !declaration.value.includes("woff2")) return;
+          // Chromium 120 supports WOFF2; omit unused native-font fallbacks.
+          declaration.value = declaration.value.replace(/,\s*url\([^)]*\)\s*format\(["'](?:woff|truetype)["']\)/g, "");
+        },
+      }],
+    },
+  },
   plugins: [{
     name: "csp-safe-lodash-root",
     transform(_code, id) {

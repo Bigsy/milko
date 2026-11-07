@@ -8,7 +8,7 @@ from [MilkJ](https://github.com/Bigsy/milkj), commit
   `block-index`, `sequence-align`, and the large-Markdown test fixture.
 - Find/replace, outline, heading-anchor and HTML-preview modules and tests.
 - Proofing extraction, normalization, dictionary, controller and Harper engine
-  modules and tests. MilkO adds a local compressed-WASM worker and lazy lifecycle.
+  modules and tests. MilkO adds a local optimized-WASM worker and lazy lifecycle.
 
 They live in `src/markdown/`, `src/proofing/` and the corresponding editor modules.
 Changes include MilkO names, host-neutral comments/callbacks, lifecycle cleanup,
@@ -37,3 +37,15 @@ new reviewed notice entry.
 
 The build replaces lodash-es's legacy global lookup with `globalThis`
 for Orca's content policy; it does not enable string evaluation.
+
+Harper 3.0.0's full WASM is optimized with Binaryen 133 using `-Oz --strip-debug
+--strip-producers`. The original SHA-256 is
+`cb8aaa2a8618ffe770e4f1fb2a6b19f16c6c7ac7815dced8c2ff44cbfda48440`;
+the optimized SHA-256 is
+`64dba282a29b234fc6fcbd67c8198a5dc3524c75f5d5d85407d3078c0e623c95`
+(15,967,589 bytes). This retains the complete module's interface and functionality.
+The pinned tool downloads, their SHA-256 digests and cache verification are in
+`scripts/binaryen.mjs`. Binaryen is a build tool and is not bundled with MilkO.
+
+KaTeX's fonts are distributed as WOFF2, supported by the target Chromium version.
+Unused WOFF/TTF fallbacks are omitted; the upstream font notices remain included.

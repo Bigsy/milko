@@ -1,8 +1,10 @@
-import { Dialect, LocalLinter, packWeirpackFiles } from "harper.js";
-import { binary } from "harper.js/binary";
+import { createBinaryModuleFromUrl, Dialect, LocalLinter, packWeirpackFiles } from "harper.js";
 import { describe, expect, it, vi } from "vitest";
 import { normalizeHarperLints } from "./normalize";
 import { HarperEngine, resolveDialect, type HarperLinter } from "./harper";
+
+// Exercise the production asset without preloading the stock binary into Harper's global glue.
+const binary = createBinaryModuleFromUrl(new URL("../../.orca/generated/harper.wasm", import.meta.url).href, "full");
 
 describe("Harper 3.0.0 integration", () => {
   it("resolves automatic dialects from locale regions", () => {

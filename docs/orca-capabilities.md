@@ -22,7 +22,9 @@ The frame supplies content, version and read-only state without a stable file
 path or identity. Recovery drafts are displayed for manual comparison and are
 never applied automatically. The public save-as dialog can export a separate draft.
 
-Bundled scripts, CSS, fonts, workers and compressed Harper WASM load locally.
+Bundled scripts, CSS, WOFF2 fonts, workers and optimized Harper WASM load locally.
+The complete Harper 3.0.0 module is optimized with pinned Binaryen 133 to fit the
+16 MiB asset limit. It is served directly as WASM, without gzip or a blob wrapper.
 Relative/remote images, uploads and project-file navigation need a supported host
 route before implementation. Raster data URLs can render. Web/email links use the
 public opener; heading fragments navigate inside the document.

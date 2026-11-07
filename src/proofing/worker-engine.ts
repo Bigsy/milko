@@ -52,7 +52,7 @@ export class WorkerHarperEngine {
 
   async dispose(): Promise<void> {
     if (this.disposed) return;
-    // Termination also releases worker-owned WASM memory and object URLs, including during startup.
+    // Termination also releases worker-owned WASM memory, including during startup.
     this.disposed = true;
     this.fail("Proofing has been disposed");
   }

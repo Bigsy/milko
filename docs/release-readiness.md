@@ -13,6 +13,15 @@ native verification below.
   including refusal races, read-only delivery, access restoration and disposal.
 - Dependency notices checked for every installed version, including differing
   notices when several versions of the same package are present.
+- Full Harper WASM optimized to 15,967,589 bytes with checksum-pinned Binaryen 133.
+  Fresh-process comparisons cover spelling, grammar, Unicode, dictionaries,
+  dialects, valid Weirpacks and invalid-pack rejection. The real engine regressions
+  load the production WASM asset rather than the stock package binary.
+  Native Orca loaded the raw WASM, displayed spelling issues, applied and saved a
+  correction, and imported/applied a Weirpack rule with exact expected Markdown.
+  WOFF2 math fonts rendered; the temporary pack was removed and prior settings restored.
+- Distributed assets contain no embedded archives, native executables, TTF/OTF
+  fonts or development probes. Math fonts use WOFF2. Payload guards enforce this.
 - Standalone archives checked for integrity, unsafe paths, unexpected files and
   deterministic output. Same-runtime isolated builds have reproduced byte for byte.
 - Native archive loading, prose/code edits saved as exact expected Markdown,

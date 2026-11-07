@@ -41,6 +41,19 @@ test("package verification rejects tampering and unexpected files", () => fixtur
   await assert.rejects(verifyRelease(result.tree), /Unexpected release files/);
 }));
 
+test("release payloads reject embedded archives, native fonts and disguised native executables", () => fixture(async (project, output) => {
+  for (const [name, bytes] of [
+    ["old.wasm.gz", Buffer.from([0x1f, 0x8b])],
+    ["font.ttf", Buffer.from("font")],
+    ["disguised.js", Buffer.from([0x7f, 0x45, 0x4c, 0x46])],
+  ]) {
+    const path = join(project, ".orca/build/assets", name);
+    await writeFile(path, bytes);
+    await assert.rejects(packageRelease(project, output), /Unsupported distributed/);
+    await rm(path);
+  }
+}));
+
 test("packaging rejects version mismatches, unsafe archive names and asset symlinks", () => fixture(async (project, output) => {
   await writeFile(join(project, "package.json"), JSON.stringify({ version: "1.0.0" }));
   await assert.rejects(packageRelease(project, output), /versions differ/);

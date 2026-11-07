@@ -5,6 +5,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
 
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
+const forbiddenAsset = (path, bytes) => /\.(?:gz|zip|tar|tgz|ttf|otf|node|exe|dll|so|dylib)$/i.test(path) ||
+  ["1f8b", "504b0304", "504b0506", "504b0708", "7f454c46", "cffaedfe", "cefaedfe", "feedfacf", "feedface", "4d5a"]
+    .some((magic) => bytes.subarray(0, magic.length / 2).toString("hex") === magic);
 const safePath = (path) => typeof path === "string" && path !== "" && !path.includes("\\") &&
   !path.startsWith("/") && !path.split("/").some((part) => part === ".." || part === "." || part === "");
 
@@ -70,6 +73,7 @@ export async function packageRelease(project, output) {
   let total = 0;
   for (const path of paths) {
     const bytes = await readFile(join(tree, path));
+    if (forbiddenAsset(path, bytes)) throw new Error(`Unsupported distributed archive, native binary or native font: ${path}`);
     if (bytes.length > 16 * 1024 * 1024) throw new Error(`Oversized release asset: ${path}`);
     total += bytes.length;
     files.push({ path, size: bytes.length, sha256: digest(bytes) });
