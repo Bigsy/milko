@@ -1,0 +1,21 @@
+node_modules/
+.orca/
+.pnpm-store/
+editor/
+.DS_Store
+.env
+.env.*
+!.env.example
+*.log
+*.pem
+*.key
+*.p12
+*.pfx
+.aws/
+.ssh/
+.agents/
+.codex/
+
+# Keep public contributor documents even when a global Git ignore excludes them.
+!AGENTS.md
+!PLAN.md

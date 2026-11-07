@@ -1,0 +1,5 @@
+# Preserve generated/vendor bytes; review generated bundles through source and build checks.
+editor/** -text -diff linguist-generated=true
+licenses/** -text -whitespace
+types/vendor/** -text -whitespace
+tests/fixtures/** -text

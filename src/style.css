@@ -1,0 +1,112 @@
+:root {
+  color-scheme: light dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--orca-background, #fff);
+  color: var(--orca-foreground, #222);
+}
+body { margin: 0; }
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--orca-border, #8884);
+  font-size: 13px;
+}
+.app-header strong { letter-spacing: -.02em; }
+.app-header strong span { font-weight: 400; opacity: .6; margin-left: 5px; }
+#status { font-size: 12px; opacity: .65; }
+#notice, #recovery { padding: 12px 24px; background: var(--orca-muted, #8882); font-size: 13px; }
+#notice { border-left: 3px solid #c68b38; }
+#recovery textarea { display: block; box-sizing: border-box; width: 100%; min-height: 150px; margin: 10px 0; font: 12px/1.5 ui-monospace, monospace; }
+button { font: inherit; cursor: pointer; padding: 5px 10px; margin: 0 8px 4px 0; }
+summary { cursor: pointer; }
+#app { max-width: var(--milko-editor-width, 960px); margin: 0 auto; }
+:root[data-milko-editor-theme=orca] .milkdown {
+  --crepe-color-background: var(--orca-background, #fff);
+  --crepe-color-on-background: var(--orca-foreground, #222);
+  --crepe-color-surface: var(--orca-popover, #f5f5f5);
+  --crepe-color-surface-low: var(--orca-muted, #eee);
+  --crepe-color-on-surface: var(--orca-foreground, #222);
+  --crepe-color-on-surface-variant: var(--orca-muted-foreground, #666);
+  --crepe-color-outline: var(--orca-border, #aaa);
+  --crepe-color-primary: var(--orca-primary, #4462a0);
+  --crepe-color-secondary: var(--orca-accent, #ddd);
+  --crepe-color-on-secondary: var(--orca-accent-foreground, #222);
+  --crepe-color-inverse: var(--orca-foreground, #222);
+  --crepe-color-on-inverse: var(--orca-background, #fff);
+  --crepe-color-hover: var(--orca-accent, #8882);
+  --crepe-color-selected: var(--orca-accent, #8883);
+  --crepe-color-inline-area: var(--orca-muted, #8882);
+  --crepe-color-inline-code: var(--orca-foreground, #444);
+  --crepe-font-title: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --crepe-font-default: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --crepe-font-code: ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+.milkdown .ProseMirror { padding: 32px 56px 120px; min-height: 65vh; font-size: var(--milko-font-size, 16px); line-height: 1.7; }
+.milkdown .ProseMirror h1 { font-size: 2rem; letter-spacing: -.035em; }
+.milkdown .ProseMirror h2 { font-size: 1.5rem; letter-spacing: -.025em; }
+.milkdown .ProseMirror:focus { outline: none; }
+/* Keep the native caret visible when the frame is focused. */
+.milkdown .ProseMirror { caret-color: var(--crepe-color-on-background); }
+.milkdown .ProseMirror ::selection { background: var(--crepe-color-selected); }
+@media (max-width: 600px) {
+  .milkdown .ProseMirror { padding: 24px 28px 90px; }
+}
+.milko-mermaid-preview { padding: 16px 8px; overflow-x: auto; }
+.milko-mermaid-preview svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.milko-mermaid-error { color: var(--orca-destructive, #c44); white-space: pre-wrap; padding: 16px; }
+.app-header { padding-left: 52px; }
+.header-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.header-tools button { margin: 0; border: 1px solid var(--orca-border, #8885); border-radius: 5px; background: var(--orca-muted, #8882); color: inherit; }
+#proofing-status { font-size: 12px; opacity: .7; }
+.milko-options { box-sizing: border-box; width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 40px); overflow: auto; border: 1px solid var(--orca-border, #8885); border-radius: 12px; background: var(--orca-background, #fff); color: var(--orca-foreground, #222); padding: 20px; }
+.milko-options::backdrop { background: #0007; }
+.milko-options header { display: flex; justify-content: space-between; align-items: center; }
+.milko-options h2 { margin: 0 0 10px; font-size: 20px; }
+.milko-options label { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; font-size: 14px; }
+.milko-options label.check { flex-direction: row; align-items: center; }
+.milko-options input, .milko-options select, .milko-options textarea { font: inherit; color: inherit; background: var(--orca-muted, #8882); border: 1px solid var(--orca-border, #8885); border-radius: 5px; padding: 7px; }
+.milko-options input[type=checkbox] { accent-color: var(--orca-primary); }
+.milko-options fieldset { border: 1px solid var(--orca-border, #8885); border-radius: 6px; }
+.options-help, [data-proofing-status] { font-size: 12px; color: var(--orca-muted-foreground, #888); }
+.milko-options button { color: inherit; background: var(--orca-muted, #8882); border: 1px solid var(--orca-border, #8885); border-radius: 5px; }
+.milko-options ul { padding-left: 20px; }
+:root[data-milko-appearance=light] { --orca-background: #fff; --orca-foreground: #20242a; --orca-muted: #f3f4f6; --orca-muted-foreground: #667085; --orca-popover: #fff; --orca-card: #f9fafb; --orca-primary: #3564ad; --orca-primary-foreground: #fff; --orca-accent: #dbe7fa; --orca-accent-foreground: #20242a; --orca-border: #d9dde3; }
+:root[data-milko-appearance=dark] { --orca-background: #17191d; --orca-foreground: #e7e9ed; --orca-muted: #24272e; --orca-muted-foreground: #a4acbb; --orca-popover: #24272e; --orca-card: #24272e; --orca-primary: #a6c4ff; --orca-primary-foreground: #17191d; --orca-accent: #343e52; --orca-accent-foreground: #e7e9ed; --orca-border: #454b58; }
+.milko-proofing-issue { text-decoration-line: underline; text-decoration-style: wavy; text-decoration-thickness: 1.2px; text-underline-offset: 3px; cursor: pointer; }
+.milko-proofing-issue--spelling { text-decoration-color: #ec7676; }
+.milko-proofing-issue--grammar { text-decoration-color: #b197ed; }
+.milko-proofing-issue--punctuation { text-decoration-color: #68a9f0; }
+.milko-proofing-issue--style { text-decoration-color: #9aa3b5; }
+.milko-proofing-widget { display: inline-block; width: 4px; height: 1em; overflow: visible; color: #68a9f0; cursor: pointer; user-select: none; }
+.milko-proofing-popup { position: fixed; z-index: 1000; max-width: min(360px, calc(100vw - 16px)); padding: 12px; border: 1px solid var(--orca-border); border-radius: 8px; background: var(--orca-popover); color: var(--orca-foreground); box-shadow: 0 4px 16px #0004; font: 13px/1.4 system-ui, sans-serif; }
+.milko-proofing-popup__category { margin-bottom: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.milko-proofing-popup__actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.milko-proofing-popup button { padding: 5px 9px; color: inherit; border: 1px solid var(--orca-border); border-radius: 5px; background: var(--orca-muted); }
+.milko-proofing-popup__empty { margin-top: 8px; opacity: .75; }
+.milkdown .ProseMirror li::marker { color: var(--crepe-color-on-surface-variant); }
+.milko-html-preview { display: block; max-width: 100%; overflow-x: auto; white-space: normal; }
+.milko-html-preview table { border-collapse: collapse; width: 100%; }
+.milko-html-preview td, .milko-html-preview th { padding: 6px 12px; border: 1px solid var(--orca-border); }
+.milko-html-preview img { max-width: 100%; height: auto; }
+.milko-html-preview details { padding: 12px; border: 1px solid var(--orca-border); border-radius: 5px; }
+.milko-shortcuts { box-sizing: border-box; width: min(780px, calc(100vw - 32px)); max-height: calc(100vh - 40px); overflow: auto; border: 1px solid var(--orca-border, #8885); border-radius: 12px; background: var(--orca-background, #fff); color: var(--orca-foreground, #222); padding: 24px; }
+.milko-shortcuts::backdrop { background: #0007; }
+.milko-shortcuts header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.milko-shortcuts h2 { margin: 0; font-size: 22px; }
+.milko-shortcuts h3 { margin: 8px 0; font-size: 14px; }
+.milko-shortcuts button { color: inherit; background: var(--orca-muted, #8882); border: 1px solid var(--orca-border, #8885); border-radius: 5px; }
+.shortcuts-help { font-size: 13px; line-height: 1.5; color: var(--orca-muted-foreground, #667085); }
+.shortcuts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 28px; }
+.shortcuts-grid table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.shortcuts-grid th { text-align: left; font-weight: 400; padding: 7px 12px 7px 0; }
+.shortcuts-grid td { text-align: right; white-space: nowrap; }
+.shortcuts-grid kbd { font: 12px ui-monospace, monospace; background: var(--orca-muted, #8882); border: 1px solid var(--orca-border, #8885); border-radius: 4px; padding: 2px 4px; }
+@media (max-width: 680px) { .shortcuts-grid { grid-template-columns: 1fr; } }
+.milko-recovery-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.milko-recovery-heading button { margin: 0; color: inherit; background: transparent; border: 1px solid var(--orca-border, #8885); border-radius: 5px; }
+.recovery-help { margin: 6px 0 12px; opacity: .75; font-size: 12px; }
+.dismiss-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.dismiss-actions button { margin: 0; }

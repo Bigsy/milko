@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MilkO Markdown</title>
+  </head>
+  <body>
+    <header class="app-header">
+      <strong>MilkO <span>Markdown</span></strong>
+      <div class="header-tools">
+        <span id="proofing-status" role="status"></span>
+        <span id="status" role="status">Opening…</span>
+        <button id="find" type="button" title="Find and replace (Cmd/Ctrl+F)">Find</button>
+        <button id="options" type="button">Options</button>
+        <button id="shortcuts" type="button">Shortcuts</button>
+      </div>
+    </header>
+    <aside id="notice" role="alert" hidden></aside>
+    <section id="recovery" aria-label="Recoverable drafts" hidden></section>
+    <main id="app" aria-label="Markdown editor"></main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

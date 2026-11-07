@@ -1,0 +1,429 @@
+// @vitest-environment jsdom
+
+import { Editor, editorViewCtx, parserCtx, remarkCtx, rootCtx, serializerCtx } from "@milkdown/kit/core";
+import { commonmark } from "@milkdown/kit/preset/commonmark";
+import { gfm } from "@milkdown/kit/preset/gfm";
+import { TextSelection } from "@milkdown/kit/prose/state";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { type MarkdownStructure, SourceBlockIndex } from "./block-index";
+import {
+  type MarkdownBlock,
+  type MarkdownBlockSplitter,
+  parseObservingBlocks,
+  splitMarkdownBlocks,
+  splitTopLevelBlocks,
+} from "./markdown-blocks";
+import { mergeSourcePreservingEdit } from "./source-preserving-sync";
+import {
+  buildCleanDoc,
+  buildDriftDoc,
+  MARKER_EDITS,
+  type MarkerEdit,
+} from "./test-support/large-markdown";
+
+/** Lines that differ between two texts, outside their common leading and trailing lines. */
+function changedLines(before: string, after: string): { removed: string[]; added: string[] } {
+  const a = before.split("\n");
+  const b = after.split("\n");
+  let head = 0;
+  while (head < a.length && head < b.length && a[head] === b[head]) head++;
+  let tail = 0;
+  while (tail < a.length - head && tail < b.length - head && a[a.length - 1 - tail] === b[b.length - 1 - tail]) {
+    tail++;
+  }
+  return { removed: a.slice(head, a.length - tail), added: b.slice(head, b.length - tail) };
+}
+
+describe("source-preserving merge with the Milkdown parser", () => {
+  let editor: Editor;
+
+  beforeAll(async () => {
+    const root = document.body.appendChild(document.createElement("div"));
+    editor = await Editor.make()
+      .config((ctx) => ctx.set(rootCtx, root))
+      .use(commonmark)
+      .use(gfm)
+      .create();
+  });
+
+  afterAll(async () => {
+    await editor.destroy();
+  });
+
+  function canonicalize(markdown: string): string {
+    return editor.action((ctx) => {
+      const document = ctx.get(parserCtx)(markdown);
+      return ctx.get(serializerCtx)(document);
+    });
+  }
+
+  function split(markdown: string): MarkdownBlock | undefined {
+    return splitMarkdownBlocks(editor.ctx.get(remarkCtx), markdown);
+  }
+
+  const structure: MarkdownStructure = {
+    splitTopLevel: (markdown) => splitTopLevelBlocks(editor.ctx.get(remarkCtx), markdown),
+    canonicalizeObserving: (markdown, knownKey) => editor.action((ctx) => {
+      const { result, blocks } = parseObservingBlocks(ctx.get(remarkCtx), markdown, ctx.get(parserCtx), knownKey);
+      return { canonical: ctx.get(serializerCtx)(result), blocks };
+    }),
+  };
+
+  /** The merge exactly as the bridge runs it: with the byte-exact guard over a fresh block index. */
+  function merge(
+    source: string,
+    edited: string,
+    canonicalizer: (markdown: string) => string,
+    knownCanonicalSource?: string,
+    splitter?: MarkdownBlockSplitter,
+    blockIndex = new SourceBlockIndex(structure),
+  ) {
+    return mergeSourcePreservingEdit(source, edited, canonicalizer, knownCanonicalSource, splitter, blockIndex);
+  }
+
+  it.each(["[text][ref]", "[ref][]", "[ref]"])("edits prose around reference link %s without rewriting its definition", (link) => {
+    const source = `alpha ${link} rest.\n\n[ref]: https://example.test "Title"\n`;
+    const blockIndex = new SourceBlockIndex(structure);
+    const edited = canonicalize(source).replace("alpha", "beta");
+    const result = merge(source, edited, canonicalize, undefined, undefined, blockIndex);
+    expect(result).toEqual({ ok: true, markdown: source.replace("alpha", "beta") });
+    // A second keystroke exercises cached, context-resolved keys too.
+    expect(merge(source.replace("alpha", "beta"), edited.replace("beta", "gamma"), canonicalize, edited, undefined, blockIndex))
+      .toEqual({ ok: true, markdown: source.replace("alpha", "gamma") });
+  });
+
+  it("resolves references using first-definition and case-folding rules without editing definitions", () => {
+    const source = 'alpha [text][REF] rest.\n\n[ref]: https://first.test "First"\n\n[REF]: https://second.test "Second"\n';
+    expect(merge(source, canonicalize(source).replace("alpha", "beta"), canonicalize))
+      .toEqual({ ok: true, markdown: source.replace("alpha", "beta") });
+  });
+
+  it("preserves real YAML frontmatter while editing body prose", () => {
+    const source = `---
+title: MilkJ
+tags:
+  - markdown
+  - wysiwyg
+---
+
+# Plan
+
+Keep __this emphasis__ exactly.
+
+- First item
+- Second item
+
+Edit this sentence[^note].
+
+[^note]: Preserve this unsupported extension exactly.
+`;
+    const editedCanonical = canonicalize(source)
+      .replace(" exactly.", " completely unchanged.");
+
+    const result = merge(source, editedCanonical, canonicalize);
+
+    expect(result).toEqual({
+      ok: true,
+      markdown: source.replace(
+        "Keep __this emphasis__ exactly.",
+        "Keep __this emphasis__ completely unchanged.",
+      ),
+    });
+  });
+
+  it("leaves raw HTML byte-for-byte intact when another paragraph changes", () => {
+    const source = `<details data-owner="MilkJ">
+<summary>Advanced</summary>
+
+Raw HTML payload.
+</details>
+
+Edit this paragraph.
+`;
+    const editedCanonical = canonicalize(source)
+      .replace("Edit this paragraph.", "This paragraph was edited.");
+
+    const result = merge(source, editedCanonical, canonicalize);
+
+    expect(result).toEqual({
+      ok: true,
+      markdown: source.replace("Edit this paragraph.", "This paragraph was edited."),
+    });
+  });
+
+  it("merges an edit far below a table whose canonical padding shifts every position", () => {
+    // Regression: serializing a GFM table pads every cell to the widest column, so a table with
+    // one long cell shifts everything below it by more than patch_apply's fuzzy-match radius
+    // (a few hundred characters). Edits below such a table failed with "could not map".
+    const longCell = "a very long confirmation note that widens this column considerably " +
+      "and keeps going for a couple of hundred characters so each of the other rows in this " +
+      "column gets padded all the way out to this width by the canonical serializer";
+    const rows = Array.from({ length: 12 }, (_, i) => `| key ${i} | value ${i} |`).join("\n");
+    const source = `# Runbook
+
+| Thing | Value |
+| --- | --- |
+| note | ${longCell} |
+${rows}
+
+## Steps
+
+Edit this sentence far below the table.
+`;
+    const canonical = canonicalize(source);
+    // The premise of the regression: canonical padding must shift later content by more than
+    // patch_apply's effective search radius (~500 chars).
+    expect(canonical.indexOf("## Steps") - source.indexOf("## Steps")).toBeGreaterThan(1000);
+
+    const edited = canonical.replace("far below the table", "way below the table");
+    const result = merge(source, edited, canonicalize);
+
+    expect(result).toEqual({
+      ok: true,
+      markdown: source.replace("far below the table", "way below the table"),
+    });
+  });
+
+  it("merges a row deletion inside a table whose canonical form is heavily padded", () => {
+    // The canonical deleted row does not exist byte-for-byte in the source. Neither that drift
+    // nor a fallback is permission to reformat the remaining rows.
+    const longCell = "an intentionally long value that makes the canonical serializer pad every " +
+      "other row in this column out to a couple of hundred characters of alignment spaces";
+    const source = `# Runbook
+
+Keep __this__ formatting.
+
+| Thing | Value |
+| --- | --- |
+| note | ${longCell} |
+| keep one | value 1 |
+| delete me | value 2 |
+| keep two | value 3 |
+
+Trailing paragraph.
+`;
+    const canonical = canonicalize(source);
+    const deletedRow = canonical.match(/^\| delete me[^\n]*\n/m)![0];
+    expect(deletedRow.length).toBeGreaterThan(100);
+    // Re-canonicalize so the remaining rows re-pad, exactly as the editor serializes a deletion.
+    const edited = canonicalize(canonical.replace(deletedRow, ""));
+
+    const result = merge(source, edited, canonicalize, undefined, split);
+
+    expect(result).toEqual({
+      ok: true,
+      markdown: source.replace("| delete me | value 2 |\n", ""),
+    });
+  });
+
+  it("preserves all remaining rows when deleting the widest first body row repads the entire table", () => {
+    const source = "Keep __this__.\n\n| A | B |\n| :--- | ---: |\n| widest | a very long value which controls padding for the whole table |\n| café | 🥛 |\n| last | x |\n";
+    const edited = canonicalize(canonicalize(source).replace(/^\| widest[^\n]*\n/m, ""));
+    expect(merge(source, edited, canonicalize, undefined, split)).toEqual({
+      ok: true, markdown: source.replace(/^\| widest[^\n]*\n/m, ""),
+    });
+  });
+
+  it.each(["\n", "\r\n"])("preserves a table without outside pipes using %j endings", (newline) => {
+    const source = ["A | B", ":--- | ---:", "widest | a very long value controlling the padding", "keep | __this__", "last | x", ""].join(newline);
+    const edited = canonicalize(canonicalize(source).replace(/^\| widest[^\n]*\n/m, ""));
+    expect(merge(source, edited, canonicalize, undefined, split)).toEqual({
+      ok: true, markdown: source.replace(/widest[^\n]*\n/, ""),
+    });
+  });
+
+  it("refuses a row deletion whose duplicated content cannot be aligned unambiguously", () => {
+    const source = "| A | B |\n| --- | --- |\n| same | value |\n| same    | value |\n";
+    const edited = canonicalize(source).replace(/^(\| same[^\n]*\n)/m, "");
+    expect(merge(source, edited, canonicalize, undefined, split).ok).toBe(false);
+  });
+
+  it("merges the mid-typing state where the line ends in a just-typed space", () => {
+    // Regression: pausing after typing a space serialized "Hello there \n…", whose trailing space
+    // does not survive a parse round-trip; the merge rejected it and the editor content was
+    // reverted under the user's caret.
+    const source = "Hello\n\nWorld\n";
+    const serialized = editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const doc = ctx.get(parserCtx)(source);
+      view.dispatch(view.state.tr.replaceWith(0, view.state.doc.content.size, doc.content));
+      // Caret at the end of "Hello", then type " there " exactly as a user pausing mid-word would.
+      view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 6)));
+      view.dispatch(view.state.tr.insertText(" there "));
+      return ctx.get(serializerCtx)(view.state.doc);
+    });
+    expect(serialized).toBe("Hello there \n\nWorld\n");
+
+    const result = merge(source, serialized, canonicalize);
+
+    expect(result).toEqual({ ok: true, markdown: "Hello there \n\nWorld\n" });
+  });
+
+  it("merges against a stale baseline once blocks can be aligned", () => {
+    // The IDE changed the file while the edit was in flight, so the canonical baseline describes a
+    // document that no longer exists. Both string strategies diff from that baseline and reconstruct
+    // the older document; the block merge reads only the real source and the editor's text, so it is
+    // the one strategy a stale baseline cannot mislead.
+    const staleSource = "# Notes\n\nKeep __this__ line.\n\nSecond paragraph.\n";
+    const source = "# Notes\n\nKeep __this__ line.\n\nInserted by the IDE.\n\nSecond paragraph.\n";
+    const edited = canonicalize(source).replace("Second paragraph.", "Second paragraph, edited.");
+    const staleBaseline = canonicalize(staleSource);
+
+    expect(mergeSourcePreservingEdit(source, edited, canonicalize, staleBaseline)).toEqual({
+      ok: false,
+      reason: "The merged Markdown was not equivalent to the rich-text document.",
+    });
+    expect(mergeSourcePreservingEdit(source, edited, canonicalize, staleBaseline, split)).toEqual({
+      ok: true,
+      markdown: source.replace("Second paragraph.", "Second paragraph, edited."),
+    });
+  });
+
+  it("rejects a stale baseline under the byte-exact guard instead of guessing its regions", () => {
+    // The guard derives the regions an edit may rewrite from the baseline → edited diff, which here
+    // also holds the IDE's inserted paragraph: a change the source already has, next to no source
+    // gap of its own. The bridge never merges against a stale baseline (every IDE push drops it),
+    // so refusing costs nothing there.
+    const source = "# Notes\n\nKeep __this__ line.\n\nInserted by the IDE.\n\nSecond paragraph.\n";
+    const edited = canonicalize(source).replace("Second paragraph.", "Second paragraph, edited.");
+    const staleBaseline = canonicalize("# Notes\n\nKeep __this__ line.\n\nSecond paragraph.\n");
+
+    expect(merge(source, edited, canonicalize, staleBaseline, split)).toEqual({
+      ok: false,
+      reason: "MilkO could not tell which part of the Markdown the rich-text change edited.",
+    });
+  });
+
+  it("keeps the source bullets a block-aligned merge did not touch", () => {
+    const source = `# Steps
+
+- one
+- inserted by the IDE
+- two
+- three
+`;
+    const edited = canonicalize(source).replace("* three", "* three, edited");
+
+    // Same stale baseline, this time inside a list: the untouched bullets keep their source bytes
+    // and their tight spacing instead of the whole list taking the editor's formatting.
+    const result = merge(
+      source,
+      edited,
+      canonicalize,
+      canonicalize("# Steps\n\n- one\n- two\n- three\n"),
+      split,
+    );
+
+    expect(result).toEqual({ ok: true, markdown: source.replace("- three", "- three, edited") });
+  });
+
+  it("leaves a tight list tight when only the block merge can produce a candidate", () => {
+    // Keep the source list tight across a deletion, including when a stale canonical baseline
+    // forces the block merge. Milkdown 7.22+ preserves spread, so match either serialized spacing.
+    const source = "# Steps\n\n- one\n- inserted by the IDE\n- two\n- three\n";
+    const staleBaseline = canonicalize("# Steps\n\n- one\n- two\n- three\n");
+    const edited = canonicalize(canonicalize(source).replace(/^[*+-] two\n(?:\n)?/m, ""));
+    expect(edited).not.toContain("two");
+
+    expect(merge(source, edited, canonicalize, staleBaseline).ok).toBe(false);
+    expect(merge(source, edited, canonicalize, staleBaseline, split)).toEqual({
+      ok: true,
+      markdown: "# Steps\n\n- one\n- inserted by the IDE\n- three\n",
+    });
+  });
+
+  it("merges only the body of a document that opens with frontmatter", () => {
+    // Only the block merge can place this edit (the baseline is stale inside the list), and over
+    // the whole document it would also align the frontmatter's tight list against Crepe's loose
+    // rendering of it. Merging the body alone leaves the frontmatter bytes to the source.
+    const frontmatter = "---\ntitle: Steps\ntags:\n  - a\n  - b\n---\n\n";
+    const source = `${frontmatter}# Steps\n\n- one\n- inserted by the IDE\n- two\n- three\n`;
+    const edited = canonicalize(source).replace("* three", "* three, edited");
+    const staleBaseline = canonicalize(`${frontmatter}# Steps\n\n- one\n- two\n- three\n`);
+
+    expect(merge(source, edited, canonicalize, staleBaseline, split)).toEqual({
+      ok: true,
+      markdown: source.replace("- three", "- three, edited"),
+    });
+  });
+
+  it("still refuses to touch frontmatter when the block merge produces the candidate", () => {
+    const source = `---
+title: MilkJ
+---
+
+# Plan
+
+Body text.
+`;
+    const edited = canonicalize(source).replace("title: MilkJ", "title: Changed in rich text");
+
+    expect(merge(source, edited, canonicalize, undefined, split)).toEqual({
+      ok: false,
+      reason: "The rich-text change would modify the document frontmatter.",
+    });
+  });
+
+  it("falls back to the string strategies when a document cannot be split", () => {
+    const source = "# Heading\n\nKeep __this__ text.\n";
+    const edited = canonicalize(source).replace("text", "prose");
+
+    expect(merge(source, edited, canonicalize, undefined, () => undefined))
+      .toEqual({ ok: true, markdown: "# Heading\n\nKeep __this__ prose.\n" });
+  });
+
+  describe("on large documents", () => {
+    // Each case parses a document of up to 200 KB several times.
+    const LARGE_TIMEOUT = 30_000;
+    const drift50k = buildDriftDoc(50_000);
+    const drift200k = buildDriftDoc(200_000);
+
+    /** One marker edit exactly as the bridge sees it: the editor holds the edited document's canonical form. */
+    function mergeMarkerEdit(source: string, edit: MarkerEdit) {
+      const edited = canonicalize(source.replace(edit.from, edit.to));
+      return merge(source, edited, canonicalize, undefined, split);
+    }
+
+    it("keeps a drifted 50 KB document intact around an edited table cell", () => {
+      const result = mergeMarkerEdit(drift50k, MARKER_EDITS.tableCell);
+
+      expect(result.ok).toBe(true);
+      const { removed, added } = changedLines(drift50k, result.ok ? result.markdown : "");
+      expect(removed).toHaveLength(1);
+      expect(removed[0]).toContain(MARKER_EDITS.tableCell.from);
+      expect(added).toHaveLength(1);
+      expect(added[0]).toContain(MARKER_EDITS.tableCell.to);
+    }, LARGE_TIMEOUT);
+
+    it("inserts exactly the typed character into a drifted 200 KB document", () => {
+      const edit = MARKER_EDITS.middle;
+
+      const result = mergeMarkerEdit(drift200k, edit);
+
+      expect(result).toEqual({ ok: true, markdown: drift200k.replace(edit.from, edit.to) });
+    }, LARGE_TIMEOUT);
+
+    it("changes only the edited table row of a clean 50 KB document", () => {
+      const clean = buildCleanDoc(drift50k, canonicalize);
+      const edit = MARKER_EDITS.tableCell;
+
+      const result = mergeMarkerEdit(clean, edit);
+
+      const expected = buildCleanDoc(drift50k.replace(edit.from, edit.to), canonicalize);
+      expect(result).toEqual({ ok: true, markdown: expected });
+      const { removed, added } = changedLines(clean, expected);
+      expect(removed).toHaveLength(1);
+      expect(added).toHaveLength(1);
+      expect(added[0]).toContain(edit.to);
+    }, LARGE_TIMEOUT);
+
+    it("inserts exactly the typed character into a clean 200 KB document", () => {
+      const clean = buildCleanDoc(drift200k, canonicalize);
+      const edit = MARKER_EDITS.middle;
+
+      const result = mergeMarkerEdit(clean, edit);
+
+      expect(result).toEqual({ ok: true, markdown: clean.replace(edit.from, edit.to) });
+    }, LARGE_TIMEOUT);
+  });
+});

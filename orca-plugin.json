@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stablyai/orca/main/docs/schemas/plugins/orca-plugin.v2.schema.json",
+  "manifestVersion": 2,
+  "id": "milko",
+  "name": "MilkO Markdown",
+  "version": "0.1.0-alpha.1",
+  "description": "Rich Markdown editing for Orca with source preservation and recoverable conflict drafts.",
+  "engines": {
+    "orca": ">=1.4.251"
+  },
+  "execution": "sandboxed-ui",
+  "pluginApi": 1,
+  "contributes": {
+    "customEditors": [
+      {
+        "id": "milko",
+        "title": "MilkO Markdown",
+        "extensions": [".md", ".markdown", ".mdown", ".mkd", ".mkdn"],
+        "entry": "editor/index.html",
+        "frame": "isolated"
+      }
+    ]
+  }
+}

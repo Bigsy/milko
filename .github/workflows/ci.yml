@@ -1,0 +1,40 @@
+name: Check release candidate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 26.7.0
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:release
+      - run: git diff --exit-code -- licenses/dependencies.txt
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: milko-alpha-candidate
+          path: |
+            .orca/releases/*.tar.gz
+            .orca/releases/*.sha256
+          include-hidden-files: true
+          if-no-files-found: error
+
+# The installed Orca CLI/desktop supplies `pnpm check:orca` and native release gates.
+# CI never publishes, tags, pushes or grants plugin permissions.
