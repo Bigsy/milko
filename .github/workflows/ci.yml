@@ -1,4 +1,4 @@
-name: Check release candidate
+name: Check release
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
       - run: git diff --exit-code -- licenses/dependencies.txt
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: milko-alpha-candidate
+          name: milko-release-package
           path: |
             .orca/releases/*.tar.gz
             .orca/releases/*.sha256
