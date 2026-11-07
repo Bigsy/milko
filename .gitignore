@@ -16,6 +16,6 @@ editor/
 .agents/
 .codex/
 
-# Keep public contributor documents even when a global Git ignore excludes them.
-!AGENTS.md
-!PLAN.md
+# Keep local planning and agent instructions out of the repository.
+AGENTS.md
+PLAN.md
