@@ -3,8 +3,28 @@
   "manifestVersion": 2,
   "id": "milko",
   "name": "MilkO Markdown",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0",
   "description": "Rich Markdown editing for Orca with source preservation and recoverable conflict drafts.",
+  "repository": "https://github.com/Bigsy/milko",
+  "license": "MIT",
+  "cover": {
+    "path": "images/cover.png",
+    "alt": "MilkO in a dark theme with a rendered Mermaid flowchart, a Markdown table, maths and tasks."
+  },
+  "screenshots": [
+    {
+      "path": "images/cover.png",
+      "alt": "MilkO displaying a Mermaid flowchart, a table, maths and a task list in a dark theme.",
+      "caption": "Diagrams, tables and maths in ordinary Markdown.",
+      "theme": "dark"
+    },
+    {
+      "path": "images/classic.png",
+      "alt": "MilkO in the light Classic theme with the document outline, highlighted TypeScript and an equation.",
+      "caption": "Classic styling, a document outline and highlighted code.",
+      "theme": "light"
+    }
+  ],
   "engines": {
     "orca": ">=1.4.251"
   },

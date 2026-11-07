@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, lstat, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
@@ -59,6 +59,13 @@ export async function packageRelease(project, output) {
   await copy(join(project, "orca-plugin.json"), "orca-plugin.json");
   await copy(join(project, "README.md"), "README.md");
   for (const file of ["LICENSE", "CHANGELOG.md", "THIRD_PARTY_NOTICES.md"]) await copy(join(project, file), file);
+  const images = [manifest.icon, manifest.cover?.path, ...(manifest.screenshots ?? []).map((image) => image.path)].filter(Boolean);
+  for (const path of new Set(images)) {
+    if (!safePath(path)) throw new Error("Unsafe release image path");
+    const source = join(project, path);
+    if (!(await lstat(source)).isFile()) throw new Error(`Release images must be regular files: ${path}`);
+    await copy(source, path);
+  }
   for (const file of await filesUnder(join(project, "licenses"))) await copy(join(project, "licenses", file), `licenses/${file}`);
   // Use the current staging build, not editor/ with its retained development history.
   for (const file of await filesUnder(join(project, ".orca/build"))) {

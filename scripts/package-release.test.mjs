@@ -41,6 +41,24 @@ test("package verification rejects tampering and unexpected files", () => fixtur
   await assert.rejects(verifyRelease(result.tree), /Unexpected release files/);
 }));
 
+test("manifest images are packaged once with integrity checks and refuse unsafe paths or links", () => fixture(async (project, output, manifest) => {
+  await mkdir(join(project, "images"));
+  await writeFile(join(project, "images/cover.png"), "cover image");
+  manifest.cover = { path: "images/cover.png", alt: "The editor" };
+  manifest.screenshots = [{ path: "images/cover.png", alt: "The editor" }];
+  await writeFile(join(project, "orca-plugin.json"), JSON.stringify(manifest));
+  const result = await packageRelease(project, output);
+  assert.equal(await readFile(join(result.tree, "images/cover.png"), "utf8"), "cover image");
+  await verifyRelease(result.tree);
+  manifest.cover.path = "../outside.png";
+  await writeFile(join(project, "orca-plugin.json"), JSON.stringify(manifest));
+  await assert.rejects(packageRelease(project, output), /Unsafe release image path/);
+  manifest.cover.path = "images/link.png";
+  await symlink(join(project, ".env"), join(project, "images/link.png"));
+  await writeFile(join(project, "orca-plugin.json"), JSON.stringify(manifest));
+  await assert.rejects(packageRelease(project, output), /regular files/);
+}));
+
 test("release payloads reject embedded archives, native fonts and disguised native executables", () => fixture(async (project, output) => {
   for (const [name, bytes] of [
     ["old.wasm.gz", Buffer.from([0x1f, 0x8b])],

@@ -1,8 +1,8 @@
 # Release checks
 
-Current version: 0.1.0-alpha.1. Compatibility floor: desktop Orca 1.4.251.
-Publishing the source repository does not mark the plugin stable or complete the
-native verification below.
+Current version: 0.1.0. Compatibility floor: desktop Orca 1.4.251.
+This first public release retains the known limitations below. Publication does
+not establish the native behaviours that have not yet been verified.
 
 ## Verified
 
@@ -26,13 +26,16 @@ native verification below.
   deterministic output. Same-runtime isolated builds have reproduced byte for byte.
 - Native archive loading, prose/code edits saved as exact expected Markdown,
   Mermaid, Harper, themes, source recreation, clipboard copying and recovery export.
+- Version 0.1.0 loaded from its packaged folder in native Orca. Marketplace images
+  were captured from the same editor assets under a separate local identity, with
+  sample documents and no workspace chrome or existing recovery drafts in view.
 - The keyboard reference was opened in native Orca; Escape closed it and restored
   focus. Platform labels and frame wiring have regression tests.
 - Bulk recovery dismissal is covered by cancellation, active checkpoint,
   concurrent draft changes and storage-refusal regressions.
   The native confirmation was opened and cancelled; existing drafts stayed intact.
 
-## Still required before a stable release
+## Remaining native verification
 
 - A real document with Orca's readOnly flag transitioning in both directions.
   Simulated host tests do not satisfy this gate; filesystem permissions alone did
@@ -41,7 +44,7 @@ native verification below.
 - Broader native acknowledgement-race and host/version coverage.
 
 Relative/remote images, uploads, project-file links and reliable per-file cursor
-restoration remain explicit alpha exclusions. GitHub CI covers the portable
+restoration remain explicit release exclusions. GitHub CI covers the portable
 pipeline; native Orca checks require the desktop app and its testing kit.
 
 ## Candidate preparation

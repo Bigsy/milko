@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0-alpha.1 — release candidate
+## 0.1.0 — 2026-11-07
 
 First independent MilkO Markdown editor for desktop Orca 1.4.251 or newer.
 
@@ -23,8 +23,9 @@ First independent MilkO Markdown editor for desktop Orca 1.4.251 or newer.
 - Local assets, optimized uncompressed Harper WASM, dependency notices and reproducible packaging.
 - Checksum-pinned Binaryen build tooling, full Harper parity checks, WOFF2-only math
   fonts and payload checks rejecting embedded archives and native executables.
+- Marketplace cover and screenshots captured from Orca, included in the verified package.
 
-This is an alpha candidate, not a published release. Relative/remote images,
+This is the first public release. Relative/remote images,
 uploads, project-file navigation and reliable per-file caret restoration remain
 unsupported. Desktop validation and remaining gates are recorded in the source
 repository's docs/release-readiness.md.
