@@ -32,6 +32,9 @@ not establish the native behaviours that have not yet been verified.
 - Version 0.1.0 loaded from its packaged folder in native Orca. Marketplace images
   were captured from the same editor assets under a separate local identity, with
   sample documents and no workspace chrome or existing recovery drafts in view.
+- Replacement gallery prepared for 0.1.2 from the published 0.1.1 editor: real
+  rendered notes, a Harper suggestion popup and Mermaid output, cropped into a
+  consistent presentation frame. No generated UI. Display settings were restored.
 - The keyboard reference was opened in native Orca; Escape closed it and restored
   focus. Platform labels and frame wiring have regression tests.
 - Bulk recovery dismissal is covered by cancellation, active checkpoint,

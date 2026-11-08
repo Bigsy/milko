@@ -8,21 +8,19 @@
   "repository": "https://github.com/Bigsy/milko",
   "license": "MIT",
   "cover": {
-    "path": "images/cover.png",
-    "alt": "MilkO in a dark theme with a rendered Mermaid flowchart, a Markdown table, maths and tasks."
+    "path": "images/cover-v2.png",
+    "alt": "MilkO: Markdown already rendered, with a real sample note showing a table, tasks and maths."
   },
   "screenshots": [
     {
-      "path": "images/cover.png",
-      "alt": "MilkO displaying a Mermaid flowchart, a table, maths and a task list in a dark theme.",
-      "caption": "Diagrams, tables and maths in ordinary Markdown.",
-      "theme": "dark"
+      "path": "images/proofing-v2.png",
+      "alt": "MilkO's actual Harper spelling popup suggesting a correction in a rendered Markdown note.",
+      "caption": "Local spelling and grammar checks with Harper, directly in your note."
     },
     {
-      "path": "images/classic.png",
-      "alt": "MilkO in the light Classic theme with the document outline, highlighted TypeScript and an equation.",
-      "caption": "Classic styling, a document outline and highlighted code.",
-      "theme": "light"
+      "path": "images/diagrams-v2.png",
+      "alt": "A real MilkO document with a coloured Mermaid flowchart and syntax-highlighted TypeScript.",
+      "caption": "Mermaid diagrams and highlighted code, together in rendered Markdown."
     }
   ],
   "engines": {

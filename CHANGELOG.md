@@ -5,6 +5,8 @@
 - Clarify that Markdown is edited directly in a rendered view, with local Harper
   spelling and grammar checks, in the marketplace description and README introduction.
   Editor behaviour and bundled editor assets are unchanged.
+- Replace the marketplace cover and gallery with consistently framed real captures
+  of rendered editing, Harper suggestions, and Mermaid diagrams with code.
 
 ## 0.1.1 — 2026-11-08
 

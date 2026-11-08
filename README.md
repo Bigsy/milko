@@ -4,7 +4,7 @@ A rendered Markdown editor for [Orca](https://www.onorca.dev/), with local spell
 and grammar checks powered by Harper. Write and edit directly in the rendered view
 while keeping your notes as ordinary Markdown files.
 
-![MilkO with a rendered Mermaid diagram, a table, maths and tasks](images/cover.png)
+![MilkO editing a rendered Markdown note with a table, tasks and maths](images/cover-v2.png)
 
 ## What it does
 
