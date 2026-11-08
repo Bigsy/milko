@@ -6,6 +6,9 @@
   classify the TypeScript file as binary. Runtime keys and Markdown behaviour are unchanged.
 - Check tracked source and generated editor text for literal NULs and invalid UTF-8
   during release validation, including files outside the downloadable archive.
+- Download build tools through GitHub's official release-asset API and retry
+  transient failures with fresh requests. Retain the pinned checksum and fail
+  immediately if the downloaded bytes do not match.
 
 ## 0.1.0 — 2026-11-07
 
