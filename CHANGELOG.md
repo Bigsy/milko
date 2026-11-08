@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 — 2026-11-08
+
+- Escape the internal block-key NUL separator in source so the directory does not
+  classify the TypeScript file as binary. Runtime keys and Markdown behaviour are unchanged.
+- Check tracked source and generated editor text for literal NULs and invalid UTF-8
+  during release validation, including files outside the downloadable archive.
+
 ## 0.1.0 — 2026-11-07
 
 First independent MilkO Markdown editor for desktop Orca 1.4.251 or newer.

@@ -1,14 +1,15 @@
 {
   "name": "milko",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MilkO Markdown editor for Orca",
   "type": "module",
   "packageManager": "pnpm@11.9.0",
   "scripts": {
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "test": "node --test scripts/collect-licenses.test.mjs scripts/package-release.test.mjs scripts/prepare-harper.test.mjs && vitest run",
+    "test": "node --test scripts/collect-licenses.test.mjs scripts/package-release.test.mjs scripts/prepare-harper.test.mjs scripts/check-repository-text.test.mjs && vitest run",
+    "check:repository": "node scripts/check-repository-text.mjs",
     "license:collect": "node scripts/collect-licenses.mjs",
     "validate": "orca plugin validate .",
     "check": "orca plugin check .",
@@ -17,7 +18,7 @@
     "package": "pnpm build && node scripts/package-release.mjs",
     "verify:package": "node scripts/package-release.mjs --verify",
     "fixtures:release": "node scripts/release-fixtures.mjs",
-    "check:release": "pnpm typecheck && pnpm test && pnpm license:collect && pnpm package && pnpm verify:package",
+    "check:release": "pnpm typecheck && pnpm test && pnpm license:collect && pnpm package && pnpm verify:package && pnpm check:repository",
     "dev": "pnpm build && orca plugin dev watch .",
     "build:watch": "vite build --watch"
   },

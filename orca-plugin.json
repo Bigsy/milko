@@ -3,7 +3,7 @@
   "manifestVersion": 2,
   "id": "milko",
   "name": "MilkO Markdown",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Rich Markdown editing for Orca with source preservation and recoverable conflict drafts.",
   "repository": "https://github.com/Bigsy/milko",
   "license": "MIT",

@@ -1,11 +1,14 @@
 # Release checks
 
-Current version: 0.1.0. Compatibility floor: desktop Orca 1.4.251.
+Current version: 0.1.1. Compatibility floor: desktop Orca 1.4.251.
 This first public release retains the known limitations below. Publication does
 not establish the native behaviours that have not yet been verified.
 
 ## Verified
 
+- Tracked text files checked for literal NUL bytes and invalid UTF-8, including
+  source outside the packaged editor. The block-key separator uses a source escape
+  with identical runtime bytes; rebuilt editor text contains no literal NULs.
 - Type checking, the portable test/build/package pipeline and Orca static checks.
 - Actual Crepe regressions for source preservation, clipboard fallback, Mermaid
   cancellation, read-only transactions, open language pickers and mounted code views.
