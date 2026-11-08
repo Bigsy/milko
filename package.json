@@ -1,8 +1,8 @@
 {
   "name": "milko",
   "private": true,
-  "version": "0.1.1",
-  "description": "MilkO Markdown editor for Orca",
+  "version": "0.1.2",
+  "description": "Edit Markdown directly in a rendered view, with local spelling and grammar checks powered by Harper. Includes Mermaid diagrams, maths, themes and recoverable drafts.",
   "type": "module",
   "packageManager": "pnpm@11.9.0",
   "scripts": {

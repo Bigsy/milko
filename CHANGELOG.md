@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 — 2026-11-08
+
+- Clarify that Markdown is edited directly in a rendered view, with local Harper
+  spelling and grammar checks, in the marketplace description and README introduction.
+  Editor behaviour and bundled editor assets are unchanged.
+
 ## 0.1.1 — 2026-11-08
 
 - Escape the internal block-key NUL separator in source so the directory does not

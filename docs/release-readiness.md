@@ -1,6 +1,6 @@
 # Release checks
 
-Current version: 0.1.1. Compatibility floor: desktop Orca 1.4.251.
+Current version: 0.1.2. Compatibility floor: desktop Orca 1.4.251.
 This first public release retains the known limitations below. Publication does
 not establish the native behaviours that have not yet been verified.
 

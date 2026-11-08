@@ -3,8 +3,8 @@
   "manifestVersion": 2,
   "id": "milko",
   "name": "MilkO Markdown",
-  "version": "0.1.1",
-  "description": "Rich Markdown editing for Orca with source preservation and recoverable conflict drafts.",
+  "version": "0.1.2",
+  "description": "Edit Markdown directly in a rendered view, with local spelling and grammar checks powered by Harper. Includes Mermaid diagrams, maths, themes and recoverable drafts.",
   "repository": "https://github.com/Bigsy/milko",
   "license": "MIT",
   "cover": {
