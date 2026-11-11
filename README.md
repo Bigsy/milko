@@ -1,5 +1,7 @@
 # MilkO Markdown
 
+https://www.onorca.dev/plugins/bigsy/milko
+
 A rendered Markdown editor for [Orca](https://www.onorca.dev/), with local spelling
 and grammar checks powered by Harper. Write and edit directly in the rendered view
 while keeping your notes as ordinary Markdown files.
