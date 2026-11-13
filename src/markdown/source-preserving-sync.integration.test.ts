@@ -92,6 +92,20 @@ describe("source-preserving merge with the Milkdown parser", () => {
       .toEqual({ ok: true, markdown: source.replace("alpha", "gamma") });
   });
 
+  it("splits whole documents for the table-row guard only when the edit touches a table", () => {
+    const source = "Edit this paragraph.\n\n| A | B |\n|-|-|\n| keep | this row |\n| cell | value |\n";
+    let splits = 0;
+    const counting: MarkdownBlockSplitter = (markdown) => { splits++; return split(markdown); };
+
+    const prose = merge(source, canonicalize(source).replace("Edit this", "Change this"), canonicalize, undefined, counting);
+    expect(prose).toEqual({ ok: true, markdown: source.replace("Edit this", "Change this") });
+    expect(splits).toBe(0);
+
+    const cell = merge(source, canonicalize(source).replace("value", "values"), canonicalize, undefined, counting);
+    expect(cell).toEqual({ ok: true, markdown: source.replace("| cell | value |", "| cell | values |") });
+    expect(splits).toBeGreaterThan(0);
+  });
+
   it("resolves references using first-definition and case-folding rules without editing definitions", () => {
     const source = 'alpha [text][REF] rest.\n\n[ref]: https://first.test "First"\n\n[REF]: https://second.test "Second"\n';
     expect(merge(source, canonicalize(source).replace("alpha", "beta"), canonicalize))

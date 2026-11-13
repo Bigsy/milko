@@ -3,7 +3,7 @@
   "manifestVersion": 2,
   "id": "milko",
   "name": "MilkO Markdown",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Edit Markdown directly in a rendered view, with local spelling and grammar checks powered by Harper. Includes Mermaid diagrams, maths, themes and recoverable drafts.",
   "repository": "https://github.com/Bigsy/milko",
   "license": "MIT",

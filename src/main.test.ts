@@ -4,14 +4,23 @@ import type { ProofingStatus } from "./proofing/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const rich = vi.hoisted(() => ({
-  source: "", callbacks: undefined as undefined | { change(markdown: string): void; notice(message: string): void; proofingStatus(value: ProofingStatus): void },
+  source: "", pending: undefined as string | undefined,
+  callbacks: undefined as undefined | { change(markdown: string): void; notice(message: string): void; proofingStatus(value: ProofingStatus): void },
 }));
 vi.mock("./rich-editor", () => ({
   mountEditor: vi.fn(async (_root, source, options) => {
     rich.source = source; rich.callbacks = options;
+    // As in the real editor, rich-text edits stay pending until flushed or read.
+    const flush = () => {
+      if (rich.pending === undefined) return false;
+      rich.source = rich.pending; rich.pending = undefined;
+      options.change(rich.source);
+      return true;
+    };
     return {
-      getSource: () => rich.source,
-      replaceMarkdown: (markdown: string) => { rich.source = markdown; },
+      getSource: () => { flush(); return rich.source; },
+      flush,
+      replaceMarkdown: (markdown: string) => { rich.pending = undefined; rich.source = markdown; },
       configure() {}, find() {}, navigate() {}, setReadOnly() {}, async destroy() {},
     };
   }),
@@ -23,10 +32,15 @@ let session: EditorSession<string>;
 let sessionValue: string;
 let acceptedValue: string;
 let sessionReadOnly: boolean;
-let documentChanged: () => void;
+let documentListeners: Array<() => void>;
+let saveListeners: Array<() => unknown>;
+/** How many document and save listeners existed when MilkO created its session. */
+let beforeSession: { documents: number; saves: number };
+function documentChanged() { documentListeners.forEach((listener) => listener()); }
+function save() { return Promise.all(saveListeners.map((listener) => listener())); }
 
 beforeEach(async () => {
-  vi.resetModules(); localStorage.clear(); rich.callbacks = undefined;
+  vi.resetModules(); localStorage.clear(); rich.callbacks = undefined; rich.pending = undefined;
   document.body.innerHTML = '<span id="status"></span><span id="proofing-status"></span><div id="notice" hidden></div><div id="recovery" hidden></div><main id="app"></main><button id="options"></button><button id="find"></button><button id="shortcuts"></button>';
   sessionValue = "Hello\nHello\n";
   acceptedValue = sessionValue;
@@ -36,13 +50,22 @@ beforeEach(async () => {
     change: vi.fn((markdown) => { sessionValue = markdown; }), flush: vi.fn(async () => { if (!sessionReadOnly) acceptedValue = sessionValue; }),
     onReplace: (callback) => { replace = callback; return { dispose() {} }; }, dispose() {},
   };
+  documentListeners = []; saveListeners = [];
+  const listen = <T>(list: T[], listener: T) => {
+    list.push(listener);
+    return { dispose() { list.splice(list.indexOf(listener), 1); } };
+  };
   Object.defineProperty(window, "orca", { configurable: true, value: {
     document: {
       get: async () => ({ version: 0, readOnly: sessionReadOnly, content: { kind: "text", text: acceptedValue } }),
-      session: async (options: { merge: typeof merge }) => { merge = options.merge; return session; },
-      onDidChange: (callback: () => void) => { documentChanged = callback; return { dispose() {} }; },
+      session: async (options: { merge: typeof merge }) => {
+        merge = options.merge;
+        beforeSession = { documents: documentListeners.length, saves: saveListeners.length };
+        return session;
+      },
+      onDidChange: (callback: () => void) => listen(documentListeners, callback),
     },
-    on: () => ({ dispose() {} }),
+    on: (event: string, callback: () => unknown) => event === "editor.flush" ? listen(saveListeners, callback) : { dispose() {} },
   } });
   await import("./main");
   await vi.waitFor(() => expect(rich.callbacks).toBeDefined());
@@ -170,5 +193,49 @@ describe("recovery wired through the Orca frame", () => {
     type("LATEST");
     expect(visibleDrafts()).toEqual(["LATEST"]);
     expect(document.querySelector("#notice")!.textContent).toContain("Copy or save");
+  });
+
+  describe("rich-text edits still pending in the editor", () => {
+    it("reach the session before Orca's own save and document listeners run", () => {
+      // Orca's frame runs listeners in the order they were added; the session adds its own when created.
+      expect(beforeSession).toEqual({ documents: 1, saves: 1 });
+      rich.pending = "Typed just before an outside change\n";
+      documentListeners[0]();
+      expect(session.change).toHaveBeenLastCalledWith("Typed just before an outside change\n");
+    });
+
+    it("are sent by a save", async () => {
+      type("Saved\n");
+      rich.pending = "Saved, then typed\n";
+      await save();
+      expect(session.change).toHaveBeenLastCalledWith("Saved, then typed\n");
+      expect(acceptedValue).toBe("Saved, then typed\n");
+    });
+
+    it("join Orca's merge with an outside change, even when its draft predates them", () => {
+      type("One\nTwo\nThree\n");
+      rich.pending = "One\nTwo\nThree, mine\n";
+      expect(merge("One\nTwo\nThree\n", "One, outside\nTwo\nThree\n", "One\nTwo\nThree\n"))
+        .toBe("One, outside\nTwo\nThree, mine\n");
+    });
+
+    it("are kept as a draft, never sent, when Orca replaces the document without them", () => {
+      type("Delivered\n");
+      rich.pending = "Typed but not delivered\n";
+      const sent = vi.mocked(session.change).mock.calls.length;
+      sessionValue = "Outside\n"; replace("Outside\n");
+      expect(vi.mocked(session.change).mock.calls).toHaveLength(sent);
+      expect(rich.source).toBe("Outside\n");
+      expect(visibleDrafts()).toContain("Typed but not delivered\n");
+    });
+
+    it("reach the session and its recovery before the frame closes", () => {
+      rich.pending = "Last words\n";
+      window.dispatchEvent(new Event("pagehide"));
+      expect(session.change).toHaveBeenLastCalledWith("Last words\n");
+      const saved = Object.keys(localStorage).filter((key) => key.startsWith("milko.recovery."))
+        .map((key) => JSON.parse(localStorage.getItem(key)!));
+      expect(saved).toContainEqual(expect.objectContaining({ kind: "recovered", markdown: "Last words\n" }));
+    });
   });
 });

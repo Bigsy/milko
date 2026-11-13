@@ -5,6 +5,7 @@ import { DEFAULT_PREFERENCES } from "./preferences";
 import { mountEditor, type RichEditor } from "./rich-editor";
 import { undo } from "@milkdown/kit/prose/history";
 import { EditorView as CodeMirrorView } from "@codemirror/view";
+import type { EditorView } from "@milkdown/kit/prose/view";
 
 // Capture the actual Crepe instance; all its plugins, node views and controls remain real.
 const instances = vi.hoisted(() => [] as import("@milkdown/crepe").Crepe[]);
@@ -48,6 +49,17 @@ async function open(markdown: string, readOnly = false) {
     addDictionaryWord() {}, proofingStatus() {},
   });
   return { root, view: instances.at(-1)!.editor.ctx.get(editorViewCtx) };
+}
+
+/** Document position at the start or end of the textblock whose text is exactly `text`. */
+function textblock(view: EditorView, text: string, edge: "start" | "end"): number {
+  let found: number | undefined;
+  view.state.doc.descendants((node, pos) => {
+    if (found === undefined && node.isTextblock && node.textContent === text) found = pos + 1 + (edge === "end" ? node.content.size : 0);
+    return found === undefined;
+  });
+  if (found === undefined) throw new Error(`No textblock reads "${text}"`);
+  return found;
 }
 
 async function copyButton(root: HTMLElement) {
@@ -159,7 +171,7 @@ describe("production MilkO with real Crepe controls", () => {
     editor!.setReadOnly(false);
     expect(view.editable).toBe(true);
     view.dispatch(view.state.tr.insertText("Writable", 1, 5));
-    expect(change).toHaveBeenCalled();
+    await vi.waitFor(() => expect(change).toHaveBeenCalled());
     editor!.setReadOnly(true);
     expect(view.editable).toBe(false);
     expect(root.querySelector(".cm-content")?.getAttribute("contenteditable")).toBe("false");
@@ -224,5 +236,91 @@ describe("production MilkO with real Crepe controls", () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(root.textContent).not.toContain("STALE DIAGRAM");
     expect(root.querySelector(".codemirror-host")?.classList.contains("hidden")).toBe(false);
+  });
+});
+
+describe("merging rich-text edits into the Markdown source", () => {
+  it("merges a burst of edits once, after they paint", async () => {
+    const { view } = await open("Keep __this__.\n\nType here.\n");
+    let end = textblock(view, "Type here.", "end");
+    for (const letter of "abc") view.dispatch(view.state.tr.insertText(letter, end++));
+    expect(change).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(change).toHaveBeenCalledOnce());
+    expect(change).toHaveBeenCalledWith("Keep __this__.\n\nType here.abc\n");
+    expect(editor!.getSource()).toBe("Keep __this__.\n\nType here.abc\n");
+    expect(change).toHaveBeenCalledOnce();
+  });
+
+  it("holds the merge while a key auto-repeats, then merges once on release", async () => {
+    const { root, view } = await open("Delete me slowly.\n");
+    let end = textblock(view, "Delete me slowly.", "end");
+    root.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace", repeat: true }));
+    for (let i = 0; i < 8; i++) { view.dispatch(view.state.tr.delete(end - 1, end)); end--; }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    expect(change).not.toHaveBeenCalled();
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Backspace" }));
+    await vi.waitFor(() => expect(change).toHaveBeenCalledOnce());
+    expect(change).toHaveBeenCalledWith("Delete me\n");
+  });
+
+  it("still merges at least once a second while a key is held", async () => {
+    const { root, view } = await open("Held key.\n");
+    const end = textblock(view, "Held key.", "end");
+    root.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace", repeat: true }));
+    view.dispatch(view.state.tr.delete(end - 1, end));
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    expect(change).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(change).toHaveBeenCalledWith("Held key\n"), { timeout: 1500 });
+  });
+
+  it("delivers pending edits at once on a shortcut, on leaving the frame and when hidden", async () => {
+    const { root, view } = await open("Text.\n");
+    view.dispatch(view.state.tr.insertText("A", 1));
+    root.dispatchEvent(new KeyboardEvent("keydown", { key: "s", metaKey: true }));
+    expect(change).toHaveBeenLastCalledWith("AText.\n");
+    view.dispatch(view.state.tr.insertText("B", 1));
+    window.dispatchEvent(new Event("blur"));
+    expect(change).toHaveBeenLastCalledWith("BAText.\n");
+    view.dispatch(view.state.tr.insertText("C", 1));
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    try {
+      document.dispatchEvent(new Event("visibilitychange"));
+    } finally {
+      Reflect.deleteProperty(document, "visibilityState");
+    }
+    expect(change).toHaveBeenLastCalledWith("CBAText.\n");
+    expect(change).toHaveBeenCalledTimes(3);
+  });
+
+  it("drops pending edits that an outside replacement supersedes", async () => {
+    const { view } = await open("Mine.\n");
+    view.dispatch(view.state.tr.insertText("Typing ", 1));
+    editor!.replaceMarkdown("Outside.\n");
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(change).not.toHaveBeenCalled();
+    expect(editor!.getSource()).toBe("Outside.\n");
+    expect(view.state.doc.textContent).toBe("Outside.");
+  });
+
+  it("keeps the edits before the first failing one in a burst, and every edit in the draft", async () => {
+    const source = "---\ntitle: Notes\n---\n\nBody text.\n";
+    const { view } = await open(source);
+    view.dispatch(view.state.tr.insertText("More ", textblock(view, "Body text.", "start")));
+    // Crepe shows frontmatter as ordinary content, but MilkO never lets rich text rewrite it.
+    view.dispatch(view.state.tr.insertText("!", textblock(view, "title: Notes", "end")));
+    view.dispatch(view.state.tr.insertText("Even ", textblock(view, "More Body text.", "start")));
+    expect(editor!.flush()).toBe(true);
+    const kept = source.replace("Body text.", "More Body text.");
+    expect(change).toHaveBeenCalledOnce();
+    expect(change).toHaveBeenCalledWith(kept);
+    expect(recover).toHaveBeenCalledOnce();
+    expect(recover).toHaveBeenCalledWith(
+      expect.stringMatching(/title: Notes!(.|\n)*Even More Body text\./),
+      expect.stringContaining("frontmatter"),
+    );
+    await Promise.resolve();
+    expect(editor!.getSource()).toBe(kept);
+    expect(view.state.doc.textContent).toContain("title: NotesMore Body text.");
+    expect(view.state.doc.textContent).not.toContain("Even");
   });
 });

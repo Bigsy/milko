@@ -1,7 +1,7 @@
 import "@milkdown/crepe/theme/common/style.css";
 import "./style.css";
 import { mergeConcurrentMarkdown } from "./concurrent-markdown";
-import { DocumentSync } from "./document-sync";
+import { deliverPendingEdits, DocumentSync } from "./document-sync";
 import { DraftSession, DraftStore } from "./recovery";
 import { mountEditor, type RichEditor } from "./rich-editor";
 import { applyAppearance, readPreferences, savePreferences, type Preferences } from "./preferences";
@@ -25,6 +25,8 @@ let sync: DocumentSync | undefined;
 let disposed = false;
 let userEdited = false;
 let mergedReplacement: string | undefined;
+/** Set while edits must become a recovery draft rather than reach the session. */
+let withholdDelivery = false;
 const subscriptions: Array<{ dispose(): void }> = [];
 const options = installOptions(preferences, updatePreferences, showNotice);
 const shortcuts = installShortcuts();
@@ -123,9 +125,14 @@ async function start(): Promise<void> {
   renderDrafts();
   const api = window.orca?.document;
   if (!api || !("session" in api)) throw new Error("Open MilkO in the Orca desktop app with document-session support.");
+  // Before the session exists, so these listeners run ahead of its own (see deliverPendingEdits).
+  subscriptions.push(deliverPendingEdits(window.orca, api, () => { editor?.flush(); }, () => sync?.flush()));
   const session = await api.session<string>({
     debounceMs: 300,
     merge(base, outside, mine) {
+      // A refused edit brings Orca here without an event first: deliver pending edits, so that
+      // `mine` holds the newest keystroke.
+      if (editor?.flush()) mine = session.value;
       const result = mergeConcurrentMarkdown(base, outside, mine);
       if (!result.ok) recover(mine, result.reason);
       mergedReplacement = result.markdown;
@@ -140,7 +147,11 @@ async function start(): Promise<void> {
     replace: (markdown) => {
       // Some Orca contexts use its Reload/Overwrite banner instead of calling merge. If a
       // replacement arrives after typing, retain the previous text before showing the outside file.
-      const previous = editor?.getSource();
+      // Pending edits normally reached the session before it chose this replacement. Any that did
+      // not must not reach it now, where they would overwrite the replacement: keep them as a draft.
+      let previous: string | undefined;
+      withholdDelivery = true;
+      try { previous = editor?.getSource(); } finally { withholdDelivery = false; }
       if (userEdited && previous !== undefined && previous !== markdown && mergedReplacement !== markdown) {
         recover(previous, "Outside content replaced an edited document. The previous draft was kept.");
       }
@@ -159,7 +170,6 @@ async function start(): Promise<void> {
     },
     recover: (markdown, reason) => { recover(markdown, reason); deliveryNotice = notice.textContent ?? ""; },
   }, api);
-  subscriptions.push(window.orca.on("editor.flush", () => sync?.flush()));
   subscriptions.push(window.orca.on("theme", () => { applyAppearance(preferences); editor?.configure(preferences); }));
   const storageChanged = (event: StorageEvent) => {
     if (event.key !== "milko.preferences.v1") return;
@@ -184,7 +194,7 @@ async function start(): Promise<void> {
         showNotice("Recovery storage is unavailable. Copy or save the current recovery draft before closing this tab.");
         renderDrafts();
       }
-      sync?.change(markdown);
+      if (!withholdDelivery) sync?.change(markdown);
     },
     recover,
     notice: showNotice,
@@ -216,6 +226,7 @@ root.addEventListener("click", (event) => {
 }, { capture: true });
 
 window.addEventListener("pagehide", () => {
+  editor?.flush(); // Pending edits reach the session, and its recovery below, before it closes.
   disposed = true;
   subscriptions.forEach((subscription) => subscription.dispose());
   sync?.dispose();

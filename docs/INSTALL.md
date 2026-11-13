@@ -1,4 +1,4 @@
-# MilkO Markdown — 0.1.2
+# MilkO Markdown — 0.1.3
 
 A rich Markdown custom editor for desktop Orca **1.4.251 or newer**.
 
@@ -10,16 +10,16 @@ by Orca before enabling it. Directory indexing can lag a new release.
 
 ## Local installation
 
-1. Extract the supplied `milko-0.1.2.tar.gz` into a permanent folder.
+1. Extract the supplied `milko-0.1.3.tar.gz` into a permanent folder.
 2. Inspect its manifest and notices. The plugin uses an isolated sandboxed UI,
    requests no host capabilities, and reads the Markdown files you open in it.
-3. Run `orca plugin dev load /absolute/path/to/milko-0.1.2`.
+3. Run `orca plugin dev load /absolute/path/to/milko-0.1.3`.
 4. Orca displays its review and the approval command. Review and approve the exact
    release, then open a Markdown file and select **MilkO Markdown**.
 
 No Node, pnpm or dependency download is needed to load this extracted package.
 The folder must stay in place. To remove the development registration, run
-`orca plugin dev unload /absolute/path/to/milko-0.1.2`.
+`orca plugin dev unload /absolute/path/to/milko-0.1.3`.
 
 The `.sha256` file verifies the archive bytes supplied to you. `INTEGRITY.json`
 lists each payload file's size and SHA-256. These are integrity checks, not a

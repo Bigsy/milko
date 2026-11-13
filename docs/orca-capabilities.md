@@ -7,9 +7,14 @@ are vendored from the matching Orca source commit; provenance is recorded in
 ## Documents
 
 MilkO uses document.session, document.get and the editor.flush event. Rich edits
-reach the session synchronously. Flush resolution alone does not prove delivery:
-MilkO compares the latest draft with accepted host content, reports an unaccepted
-draft and retries when write access returns.
+reach the session once the keystroke has painted, or once a held key is released
+(at least every second while it is held). Before Orca can act on the draft, MilkO
+delivers pending edits synchronously: its document and editor.flush listeners are
+added before the session's own, which run in that order, and the merge callback,
+replacements, blur, hiding, shortcuts and pagehide flush first. Orca's real
+session covers this in the host-contract tests. Flush resolution alone does not
+prove delivery: MilkO compares the latest draft with accepted host content,
+reports an unaccepted draft and retries when write access returns.
 
 Concurrent merging is conservative and line based. Same-line changes, ambiguous
 repeated lines and over-budget alignments require recovery. Native disk-write

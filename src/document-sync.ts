@@ -1,4 +1,28 @@
-import type { EditorDocumentApi, EditorSession } from "orca/frame";
+import type { EditorDocumentApi, EditorSession, OrcaFrameApi } from "orca/frame";
+
+/**
+ * Hands Orca the editor's undelivered edits before Orca acts on its draft. The editor merges a
+ * burst of keystrokes after it paints rather than on every keystroke, so the session can lag the
+ * screen; `deliver` must pass every pending edit to the session synchronously.
+ *
+ * Call this before creating the session. Orca's frame runs listeners in the order they were added,
+ * so these run ahead of the session's own: a save sends the newest keystroke, and an outside or
+ * access change finds the session already holding it. Delivered any later, an outside change the
+ * session took as clean would be overwritten by the late edit.
+ */
+export function deliverPendingEdits(
+  orca: Pick<OrcaFrameApi, "on">,
+  document: Pick<EditorDocumentApi, "onDidChange">,
+  deliver: () => void,
+  flush: () => Promise<void> | undefined,
+): { dispose(): void } {
+  const documents = document.onDidChange(() => deliver());
+  const saves = orca.on("editor.flush", () => {
+    deliver();
+    return flush();
+  });
+  return { dispose() { documents.dispose(); saves.dispose(); } };
+}
 
 interface Callbacks {
   replace(markdown: string): void;

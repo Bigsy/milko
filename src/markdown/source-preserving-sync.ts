@@ -77,9 +77,17 @@ export function mergeSourcePreservingEdit(
   });
 
   let canonicalEdited: string | undefined;
-  // The block guard alone permits an edited table to rewrite all its unchanged rows.
-  const keepsTableRows = splitBlocks && sourceMarkdown.includes("|")
-    ? tableRowGuard(sourceMarkdown, editedCanonicalMarkdown, splitBlocks) : undefined;
+  // The block guard alone permits an edited table to rewrite all its unchanged rows. The row guard
+  // splits three whole documents, so build it only when it has rows to protect: the regions check
+  // already keeps every byte outside the touched regions, and a source table needs `|` to exist.
+  const needsTableRowGuard = splitBlocks !== undefined && (regions
+    ? regions.regions.some((region) => sourceMarkdown.slice(region.start, region.end).includes("|"))
+    : sourceMarkdown.includes("|"));
+  let tableRowGuardCache: ((candidate: string) => boolean) | undefined;
+  const keepsTableRows = needsTableRowGuard
+    ? (candidate: string) =>
+      (tableRowGuardCache ??= tableRowGuard(sourceMarkdown, editedCanonicalMarkdown, splitBlocks))(candidate)
+    : undefined;
   let reason = "MilkO could not map the rich-text change onto the original Markdown.";
   const tried = new Set<string>();
   for (const produceCandidate of rawCandidates) {

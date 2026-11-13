@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.3 - 2026-11-13
+
+- Make deleting and typing responsive on larger documents. Holding Backspace no
+  longer re-checks the whole document on every repeat: rich-text edits merge into
+  the Markdown source after each keystroke paints, and once when a held key is
+  released. Saves, outside changes, merges, access changes and closing the editor
+  still receive the newest keystroke first.
+- Check unchanged table rows only when an edit touches a table, instead of
+  reparsing the whole document three times per keystroke whenever it contains `|`.
+
 ## 0.1.2 — 2026-11-08
 
 - Clarify that Markdown is edited directly in a rendered view, with local Harper

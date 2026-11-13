@@ -46,7 +46,7 @@ copies after confirmation, while keeping your current editing checkpoint.
 
 ## Current status
 
-MilkO 0.1.2 supports desktop Orca 1.4.251 or newer. Relative and remote
+MilkO 0.1.3 supports desktop Orca 1.4.251 or newer. Relative and remote
 images, image uploads, project-file links and restoring the cursor position after
 switching views are still being worked on. Read-only transitions have automated
 coverage; verification of access changes in the desktop app remains limited.

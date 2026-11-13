@@ -1,6 +1,6 @@
 # Release checks
 
-Current version: 0.1.2. Compatibility floor: desktop Orca 1.4.251.
+Current version: 0.1.3. Compatibility floor: desktop Orca 1.4.251.
 This first public release retains the known limitations below. Publication does
 not establish the native behaviours that have not yet been verified.
 
@@ -12,8 +12,14 @@ not establish the native behaviours that have not yet been verified.
 - Type checking, the portable test/build/package pipeline and Orca static checks.
 - Actual Crepe regressions for source preservation, clipboard fallback, Mermaid
   cancellation, read-only transactions, open language pickers and mounted code views.
-- Nine contracts using Orca's real session implementation over a simulated host,
+- Thirteen contracts using Orca's real session implementation over a simulated host,
   including refusal races, read-only delivery, access restoration and disposal.
+  Four cover deferred rich-text merging: undelivered typing merges with an outside
+  change, a save sends it as one edit, a read-only transition retains it, and a
+  control shows that delivery after the session's own listener would overwrite the
+  outside change. Each deferral safeguard was removed in turn and a test failed.
+- Held-key editing measured in Crepe under jsdom: a repeat costs under 1 ms at
+  2.7 KB, 30 KB and 100 KB (previously 18, 200 and 690 ms), with one merge on release.
 - Dependency notices checked for every installed version, including differing
   notices when several versions of the same package are present.
 - Full Harper WASM optimized to 15,967,589 bytes with checksum-pinned Binaryen 133.
@@ -46,6 +52,9 @@ not establish the native behaviours that have not yet been verified.
 - A real document with Orca's readOnly flag transitioning in both directions.
   Simulated host tests do not satisfy this gate; filesystem permissions alone did
   not establish it in the native checks.
+- Holding Backspace and saving, switching views or editing the file outside Orca
+  straight after typing, in native Orca. The deferred merge relies on the frame
+  running listeners in registration order, which the host-contract tests cover.
 - Longer native lifecycle and memory coverage.
 - Broader native acknowledgement-race and host/version coverage.
 
