@@ -14,6 +14,7 @@ export function installOptions(initial: Preferences, change: (value: Preferences
     <label>Editor theme<select data-key="editorTheme">${EDITOR_THEMES.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></label>
     <label>Mermaid theme<select data-key="mermaidTheme">${MERMAID_THEMES.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></label>
     <label>Text size<input data-key="fontSize" type="number" min="12" max="24" step="1"></label>
+    <label>Line spacing<input data-key="lineHeight" type="number" min="1.2" max="3" step="0.1"></label>
     <label class="check"><input data-key="wide" type="checkbox">Wide writing area</label>
     <fieldset><legend>Proofing</legend>
       <label class="check"><input data-key="proofingEnabled" type="checkbox">Check spelling and grammar with Harper</label>
@@ -34,7 +35,7 @@ export function installOptions(initial: Preferences, change: (value: Preferences
     change(current);
   }
   function render() {
-    for (const key of ["appearance", "editorTheme", "mermaidTheme", "fontSize", "wide", "proofingEnabled", "dialect", "dictionary"] as const) {
+    for (const key of ["appearance", "editorTheme", "mermaidTheme", "fontSize", "lineHeight", "wide", "proofingEnabled", "dialect", "dictionary"] as const) {
       const control = dialog.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(`[data-key="${key}"]`)!;
       if (control instanceof HTMLInputElement && control.type === "checkbox") control.checked = Boolean(current[key]);
       else control.value = key === "dictionary" ? current.dictionary.join("\n") : String(current[key]);
@@ -58,6 +59,7 @@ export function installOptions(initial: Preferences, change: (value: Preferences
     if (key === "weirpack") return;
     if (key === "wide" || key === "proofingEnabled") update({ [key]: (input as HTMLInputElement).checked });
     else if (key === "fontSize") update({ fontSize: Number(input.value) });
+    else if (key === "lineHeight") update({ lineHeight: (input as HTMLInputElement).valueAsNumber });
     else if (key === "dictionary") update({ dictionary: input.value.split(/\r?\n/) });
     else if (key === "appearance" || key === "editorTheme" || key === "mermaidTheme" || key === "dialect") update({ [key]: input.value });
   });

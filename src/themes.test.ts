@@ -13,12 +13,13 @@ describe("bundled Crepe themes", () => {
     const backgrounds = new Set<string>();
     for (const [editorTheme] of EDITOR_THEMES) {
       for (const appearance of ["light", "dark"] as const) {
-        applyAppearance(normalizePreferences({ editorTheme, appearance }));
+        applyAppearance(normalizePreferences({ editorTheme, appearance, lineHeight: 2.1 }));
         const css = document.getElementById("milko-editor-theme")!.textContent!;
         expect(css).not.toMatch(/@import|url\(/i);
         expect(css).toContain("--crepe-font-title:");
         expect(document.documentElement.dataset.milkoEditorTheme).toBe(editorTheme);
         expect(document.documentElement.dataset.milkoColorScheme).toBe(appearance);
+        expect(document.documentElement.style.getPropertyValue("--milko-line-height")).toBe("2.1");
         if (editorTheme !== "orca") backgrounds.add(css.match(/--crepe-color-background:\s*([^;]+);/)![1]);
       }
     }

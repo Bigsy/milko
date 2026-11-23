@@ -22,8 +22,8 @@ while keeping your notes as ordinary Markdown files.
 
 Open **Options** at the top right to choose Orca, Classic, Frame or Nord styling,
 with light and dark appearances. Diagrams have their own theme choices, including
-Forest, Neo and Redux. You can also adjust the text size and writing width, choose
-an English dialect, add dictionary words or import a Weirpack.
+Forest, Neo and Redux. You can also adjust the text size, line spacing and writing
+width, choose an English dialect, add dictionary words or import a Weirpack.
 
 **Find** opens search and replace. The outline button at the top left helps you
 jump between headings. **Shortcuts**, beside Options, opens the keyboard reference

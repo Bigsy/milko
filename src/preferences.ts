@@ -7,6 +7,7 @@ export interface Preferences {
   editorTheme: EditorTheme;
   mermaidTheme: MermaidTheme;
   fontSize: number;
+  lineHeight: number;
   wide: boolean;
   proofingEnabled: boolean;
   dialect: ProofingDialect;
@@ -15,7 +16,7 @@ export interface Preferences {
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
-  appearance: "auto", editorTheme: "orca", mermaidTheme: "auto", fontSize: 16, wide: false,
+  appearance: "auto", editorTheme: "orca", mermaidTheme: "auto", fontSize: 16, lineHeight: 1.5, wide: false,
   proofingEnabled: true, dialect: "AUTO", dictionary: [], weirpacks: [],
 };
 const DIALECTS = ["AUTO", "AMERICAN", "BRITISH", "AUSTRALIAN", "CANADIAN", "INDIAN"];
@@ -28,6 +29,7 @@ export function normalizePreferences(input: unknown): Preferences {
     editorTheme: EDITOR_THEMES.some(([value]) => value === p.editorTheme) ? p.editorTheme! : "orca",
     mermaidTheme: MERMAID_THEMES.some(([value]) => value === p.mermaidTheme) ? p.mermaidTheme! : "auto",
     fontSize: typeof p.fontSize === "number" && Number.isFinite(p.fontSize) ? Math.max(12, Math.min(24, Math.round(p.fontSize))) : 16,
+    lineHeight: typeof p.lineHeight === "number" && Number.isFinite(p.lineHeight) ? Math.max(1.2, Math.min(3, p.lineHeight)) : 1.5,
     wide: p.wide === true,
     proofingEnabled: p.proofingEnabled !== false,
     dialect: DIALECTS.includes(p.dialect ?? "") ? p.dialect! : "AUTO",
@@ -50,6 +52,7 @@ export function applyAppearance(preferences: Preferences): "light" | "dark" {
   const root = document.documentElement;
   root.dataset.milkoAppearance = preferences.appearance;
   root.style.setProperty("--milko-font-size", `${preferences.fontSize}px`);
+  root.style.setProperty("--milko-line-height", String(preferences.lineHeight));
   root.style.setProperty("--milko-editor-width", preferences.wide ? "1200px" : "960px");
   const theme = preferences.appearance === "auto" ? (root.classList.contains("dark") ? "dark" : "light") : preferences.appearance;
   root.style.colorScheme = theme;

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add a saved line spacing option for paragraphs and lists, adjustable from 1.2
+  to 3 times the text size, keeping the existing 1.5 default.
+
 ## 0.1.3 - 2026-11-13
 
 - Make deleting and typing responsive on larger documents. Holding Backspace no
