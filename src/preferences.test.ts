@@ -6,7 +6,7 @@ beforeEach(() => localStorage.clear());
 
 describe("MilkO preferences", () => {
   it("persists proofing, dialect, dictionary, Weirpacks and appearance across sessions", () => {
-    const p = normalizePreferences({ appearance: "light", editorTheme: "nord", mermaidTheme: "redux-dark-color", fontSize: 19, wide: true, proofingEnabled: false,
+    const p = normalizePreferences({ appearance: "light", editorTheme: "nord", mermaidTheme: "redux-dark-color", fontSize: 19, lineHeight: 2.1, wide: true, proofingEnabled: false,
       dialect: "BRITISH", dictionary: ["MilkO"], weirpacks: [{ name: "Writing", data: "YWJj" }] });
     savePreferences(p, localStorage);
     expect(readPreferences(localStorage)).toEqual(p);
@@ -21,9 +21,16 @@ describe("MilkO preferences", () => {
       .toMatchObject({ fontSize: 24, dialect: "AUTO", dictionary: ["MilkO"] });
     expect(normalizePreferences({ fontSize: -10 }).fontSize).toBe(12);
   });
+  it("bounds line spacing and rejects non-numeric or non-finite values", () => {
+    expect(normalizePreferences({ lineHeight: 99 }).lineHeight).toBe(3);
+    expect(normalizePreferences({ lineHeight: -1 }).lineHeight).toBe(1.2);
+    for (const lineHeight of [undefined, null, "2", NaN, Infinity, -Infinity]) {
+      expect(normalizePreferences({ lineHeight }).lineHeight).toBe(1.5);
+    }
+  });
   it("keeps the existing Orca appearance when upgrading old preferences or rejecting unknown themes", () => {
     expect(normalizePreferences({ appearance: "dark", fontSize: 18 }))
-      .toMatchObject({ appearance: "dark", editorTheme: "orca", mermaidTheme: "auto", fontSize: 18 });
+      .toMatchObject({ appearance: "dark", editorTheme: "orca", mermaidTheme: "auto", fontSize: 18, lineHeight: 1.5 });
     expect(normalizePreferences({ editorTheme: "unknown", mermaidTheme: "unknown" }))
       .toMatchObject({ editorTheme: "orca", mermaidTheme: "auto" });
   });
@@ -33,9 +40,11 @@ describe("MilkO preferences", () => {
   });
   it("applies an explicit appearance independently of Orca's theme", () => {
     document.documentElement.classList.add("dark");
-    expect(applyAppearance(normalizePreferences({ appearance: "light", fontSize: 18, wide: true }))).toBe("light");
+    expect(applyAppearance(normalizePreferences({ appearance: "light", fontSize: 18, lineHeight: 2.1, wide: true }))).toBe("light");
     expect(document.documentElement.dataset.milkoAppearance).toBe("light");
     expect(document.documentElement.style.getPropertyValue("--milko-font-size")).toBe("18px");
+    expect(document.documentElement.style.getPropertyValue("--milko-line-height")).toBe("2.1");
     expect(applyAppearance(normalizePreferences({ appearance: "auto" }))).toBe("dark");
+    expect(document.documentElement.style.getPropertyValue("--milko-line-height")).toBe("1.5");
   });
 });

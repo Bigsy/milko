@@ -29,7 +29,7 @@ Orca-generated content hash.
 ## Use
 
 **Options** is at the top right beside **Find**. It saves appearance, editor and
-Mermaid themes, text size, writing width and Harper settings. Editor themes include
+Mermaid themes, text size, line spacing, writing width and Harper settings. Editor themes include
 Orca, Classic, Frame and Nord, with light/dark variants. Mermaid includes Auto and
 eleven built-in styles, including Neo and Redux variants. Find also opens with Cmd/Ctrl+F. The top-left
 button opens the outline. Mermaid renders by default; choose **Edit source** to

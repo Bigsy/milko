@@ -26,3 +26,22 @@ it("offers and persists all shipped themes through the actual Options controls",
   expect(document.querySelector("dialog")).toBeNull();
   expect(notice).not.toHaveBeenCalled();
 });
+
+it("persists line spacing through its Options control and restores it when reopened", () => {
+  const options = installOptions(normalizePreferences(null), (next) => savePreferences(next, localStorage), vi.fn());
+  const input = document.querySelector<HTMLInputElement>('[data-key=lineHeight]')!;
+  expect(input.value).toBe("1.5");
+  input.value = "2.1";
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+  expect(readPreferences(localStorage).lineHeight).toBe(2.1);
+  expect(readPreferences(localStorage).fontSize).toBe(16);
+  input.value = "";
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+  expect(readPreferences(localStorage).lineHeight).toBe(1.5);
+  input.value = "2.1";
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+  options.dispose();
+  const restored = installOptions(readPreferences(localStorage), vi.fn(), vi.fn());
+  expect(document.querySelector<HTMLInputElement>('[data-key=lineHeight]')!.value).toBe("2.1");
+  restored.dispose();
+});

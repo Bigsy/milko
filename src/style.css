@@ -45,6 +45,7 @@ summary { cursor: pointer; }
   --crepe-font-code: ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 .milkdown .ProseMirror { padding: 32px 56px 120px; min-height: 65vh; font-size: var(--milko-font-size, 16px); line-height: 1.7; }
+.milkdown .ProseMirror p { line-height: var(--milko-line-height, 1.5); }
 .milkdown .ProseMirror h1 { font-size: 2rem; letter-spacing: -.035em; }
 .milkdown .ProseMirror h2 { font-size: 1.5rem; letter-spacing: -.025em; }
 .milkdown .ProseMirror:focus { outline: none; }
